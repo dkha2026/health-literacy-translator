@@ -323,13 +323,22 @@ export default function App() {
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Server returned error status ${response.status}`);
+      const responseText = await response.text();
+      let responseData: any = {};
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (parseError) {
+        if (!response.ok) {
+          throw new Error(`Server returned error status ${response.status}. The server was unable to process the translation at this moment.`);
+        }
+        throw new Error("Received an invalid response format from the server. Please check your internet connection and try again.");
       }
 
-      const data: TranslationResult = await response.json();
-      setResults(data);
+      if (!response.ok) {
+        throw new Error(responseData.error || `Server returned error status ${response.status}`);
+      }
+
+      setResults(responseData);
     } catch (err: any) {
       console.error("Translation fail:", err);
       setErrorMessage(err.message || "Something went wrong while simplifying your medical document. Please check your network or try again.");
@@ -1203,7 +1212,7 @@ export default function App() {
                   <div className={`mt-8 p-3.5 rounded-xl text-xs leading-relaxed max-w-xl mx-auto text-left border ${
                     darkMode ? "bg-slate-900 text-slate-400 border-slate-800" : "bg-slate-50 border-slate-200/50 text-slate-600"
                   }`}>
-                    ⚠️ <strong>Disclaimer:</strong> This application is for educational purposes only and does not provide medical advice, diagnosis, or treatment. It is design-optimized to assist medical comprehension and should never replace professional clinical consulting, expert diagnosis, or emergency healthcare services.
+                    ⚠️ Disclaimer: This application is for educational purposes only and does not provide medical advice, diagnosis, or treatment. It is design-optimized to assist medical comprehension and should never replace professional clinical consulting, expert diagnosis, or emergency healthcare services.
                   </div>
                 </motion.div>
 
@@ -1359,8 +1368,15 @@ export default function App() {
 
                   {/* Body Content area */}
                   <div className="p-6 md:p-8 space-y-8">
+
+                    {/* Persistent Output Page Disclaimer Banner */}
+                    <div className={`p-4 rounded-xl text-xs leading-relaxed border ${
+                      darkMode ? "bg-slate-900/50 border-slate-800 text-slate-400" : "bg-amber-50 border-amber-200 text-slate-700"
+                    }`}>
+                      ⚠️ Disclaimer: This application is for educational purposes only and does not provide medical advice, diagnosis, or treatment. It is design-optimized to assist medical comprehension and should never replace professional clinical consulting, expert diagnosis, or emergency healthcare services.
+                    </div>
                     
-                    {results.unsupportedRequestDetected ? (
+                    {results.unsupportedRequestDetected && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1412,9 +1428,9 @@ export default function App() {
                           </div>
                         </div>
                       </motion.div>
-                    ) : (
-                      <>
-                        {/* ACSQHC Key Messages Section */}
+                    )}
+
+                    {/* ACSQHC Key Messages Section */}
                     {results.keyMessages && results.keyMessages.length > 0 && (
                       <div className={`p-5 rounded-2xl border transition-all ${
                         darkMode ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"
@@ -1520,7 +1536,7 @@ export default function App() {
                     </div>
 
                     {/* DISCERN Treatment Choice Quality Panel */}
-                    {results.discernAssessment && (
+                    {!results.unsupportedRequestDetected && results.discernAssessment && (
                       <div className={`p-5 rounded-2xl border transition-all ${
                         darkMode ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"
                       }`}>
@@ -1609,7 +1625,7 @@ export default function App() {
                     )}
 
                     {/* Key Action Steps Checkable Item list */}
-                    {results.keyActionSteps && results.keyActionSteps.length > 0 && (
+                    {!results.unsupportedRequestDetected && results.keyActionSteps && results.keyActionSteps.length > 0 && (
                       <div className={`p-5 rounded-2xl border transition-all ${
                         darkMode ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"
                       }`}>
@@ -1773,7 +1789,7 @@ export default function App() {
                     )}
 
                     {/* Interactive Self-Advocacy Checklist */}
-                    {results.doctorQuestions && results.doctorQuestions.length > 0 && (
+                    {!results.unsupportedRequestDetected && results.doctorQuestions && results.doctorQuestions.length > 0 && (
                       <div className={`p-5 rounded-2xl border transition-all ${
                         darkMode ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"
                       }`}>
@@ -1914,67 +1930,67 @@ export default function App() {
                     )}
 
                     {/* Urgency Badge & Clinical Triage */}
-                    <div className={`p-5 rounded-2xl border transition-all ${getUrgencyClasses(results.urgencyLevel)}`}>
-                      <button
-                        onClick={() => setUrgencyOpen(!urgencyOpen)}
-                        className="w-full flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-emerald-500/20 rounded-lg p-1 text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          {getUrgencyIcon(results.urgencyLevel)}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-bold text-base tracking-normal text-slate-800 dark:text-slate-200">
-                              Clinician Guidelines & Urgency
-                            </h4>
-                            <span className={`px-2 py-0.5 text-xs font-extrabold rounded-full ${
-                              darkMode
-                                ? results.urgencyLevel === "emergency"
-                                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                                  : results.urgencyLevel === "critical"
-                                    ? "bg-teal-500/20 text-teal-300 border border-teal-500/40"
-                                    : results.urgencyLevel === "important"
-                                      ? "bg-emerald-600/10 text-emerald-400 border border-emerald-600/25"
-                                      : "bg-slate-800 text-slate-300 border border-slate-700"
-                                : results.urgencyLevel === "emergency"
-                                  ? "bg-emerald-600 text-white border border-emerald-700"
-                                  : results.urgencyLevel === "critical"
-                                    ? "bg-teal-500 text-white border border-teal-600"
-                                    : results.urgencyLevel === "important"
-                                      ? "bg-emerald-100 text-emerald-800 border border-emerald-250"
-                                      : "bg-slate-200 text-slate-700 border border-slate-300"
-                            }`}>
-                              {results.urgencyLevel.toUpperCase()}
-                            </span>
+                    {!results.unsupportedRequestDetected && (
+                      <div className={`p-5 rounded-2xl border transition-all ${getUrgencyClasses(results.urgencyLevel)}`}>
+                        <button
+                          onClick={() => setUrgencyOpen(!urgencyOpen)}
+                          className="w-full flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-emerald-500/20 rounded-lg p-1 text-left"
+                        >
+                          <div className="flex items-center gap-4">
+                            {getUrgencyIcon(results.urgencyLevel)}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-bold text-base tracking-normal text-slate-800 dark:text-slate-200">
+                                Clinician Guidelines & Urgency
+                              </h4>
+                              <span className={`px-2 py-0.5 text-xs font-extrabold rounded-full ${
+                                darkMode
+                                  ? results.urgencyLevel === "emergency"
+                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                    : results.urgencyLevel === "critical"
+                                      ? "bg-teal-500/20 text-teal-300 border border-teal-500/40"
+                                      : results.urgencyLevel === "important"
+                                        ? "bg-emerald-600/10 text-emerald-400 border border-emerald-600/25"
+                                        : "bg-slate-800 text-slate-300 border border-slate-700"
+                                  : results.urgencyLevel === "emergency"
+                                    ? "bg-emerald-600 text-white border border-emerald-700"
+                                    : results.urgencyLevel === "critical"
+                                      ? "bg-teal-500 text-white border border-teal-600"
+                                      : results.urgencyLevel === "important"
+                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-250"
+                                        : "bg-slate-200 text-slate-700 border border-slate-300"
+                              }`}>
+                                {results.urgencyLevel.toUpperCase()}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-400">
-                          <span className="text-xs font-mono hidden sm:inline">
-                            {urgencyOpen ? "Collapse" : "Expand"}
-                          </span>
-                          {urgencyOpen ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </div>
-                      </button>
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <span className="text-xs font-mono hidden sm:inline">
+                              {urgencyOpen ? "Collapse" : "Expand"}
+                            </span>
+                            {urgencyOpen ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </div>
+                        </button>
 
-                      <AnimatePresence initial={false}>
-                        {urgencyOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <p className={`text-sm mt-3 leading-normal font-medium max-w-2xl pt-3 border-t border-dashed border-slate-400/20 dark:border-slate-800/40 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-                              {results.urgencyReasoning}
-                            </p>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                      </>
+                        <AnimatePresence initial={false}>
+                          {urgencyOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <p className={`text-sm mt-3 leading-normal font-medium max-w-2xl pt-3 border-t border-dashed border-slate-400/20 dark:border-slate-800/40 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+                                {results.urgencyReasoning}
+                              </p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     )}
 
                   </div>

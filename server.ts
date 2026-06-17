@@ -133,12 +133,14 @@ async function startServer() {
          - "urgencyReasoning": Highly professional, calm, friendly, and reassuring guidance explaining the selected urgency level.
          - CRITICAL: Never use alarmist, frightening, or intimidating language. Ensure patients feel safe, reassured, or guided constructively rather than scared. For example, for "emergency" or "critical" events, frame recommendations constructively (e.g., "To ensure your peace of mind and comfort, a quick check-in with your medical team or nearest care service is highly recommended for appropriate clinical support.") rather than warning of dire or scary consequences. Always keep the explanation calming and friendly.
 
-      6. CLINICAL BOUNDARIES & UNSUPPORTED REQUESTS:
-         - If the user provides a request that asks for direct symptom diagnosis, symptom triaging, writing or copying a medical prescription, ordering laboratory tests, recommending specific medical dosages, or any clinical action that violates consumer self-education (e.g. asking "can you diagnose me?", "write me a prescription for penicillin", "what's my symptom chest pain mean?", etc.), you MUST set:
-           * "unsupportedRequestDetected" to true.
-           * "unsupportedRequestTitle" to a friendly direct title (e.g., "Educational Use & Prescription Policy").
-           * "unsupportedRequestMessage" to a direct, yet extremely friendly, respectful, and comforting explanation of why we cannot diagnose conditions or prescribe medications (e.g., noting that SimplyHealth is an educational health literacy tool, and advising them to consult their General Practitioner or local healthcare team for clinical diagnostics).
-         - If the request is a standard translation of a medical document (e.g. discharge summary, referral letter, lab test results), set "unsupportedRequestDetected" to false, "unsupportedRequestTitle" to "", and "unsupportedRequestMessage" to "".
+      6. CLINICAL BOUNDARIES, MIXED QUESTIONS & UNSUPPORTED REQUESTS:
+         - If the user provides a request that asks for direct symptom diagnosis, symptom triaging, writing or copying a medical prescription, ordering laboratory tests, recommending specific medical dosages, or any clinical action that violates consumer self-education (including mixed questions like "What is hyperlipidaemia and do I have it?", where the user asks BOTH for educational definitions AND whether they personally have a condition or should get a prescription):
+           * You MUST still perform your primary health literacy job of answering, defining, translating, and simplifying any educational medical concepts, documents, or terms present in the query (e.g., explaining what "hyperlipidaemia" means in plain, accessible terms in the core explanation, glossary, etc.).
+           * You MUST ALSO set "unsupportedRequestDetected" to true.
+           * You MUST set "unsupportedRequestTitle" to a friendly direct title (e.g., "Educational Use & Prescription Policy" or "Medical Diagnostics & Prescription Policy").
+           * You MUST set "unsupportedRequestMessage" to a direct, yet extremely friendly, respectful, and comforting explanation explaining that we cannot diagnose conditions, check if they have a condition, or recommend individual treatments/prescriptions, because SimplyHealth is an educational health literacy tool. Explicitly advise them to consult their General Practitioner or local healthcare team for clinical diagnostics, while highlighting that we have provided definitions and simplified medical concepts of the term below.
+           * CRITICAL PRONOUN RULE: For mixed or general questions where no clinician's notes or explicit diagnosed document is provided, you MUST NOT use words like "you" or "you have" or suggest that the user has the disease (e.g. do not say "your hyperlipidaemia" or "you are experiencing this"). Write the core messages, plain language explanation, and jargon glossary in objective third-person language (e.g. "Hyperlipidaemia represents a high level of fats in the blood" instead of "You have high levels of fat in your blood"). Only use "you" if the user has explicitly stated that their doctor told them about their diagnosis.
+         - If the request is a standard translation of a medical document (e.g. discharge summary, referral letter, lab test results) without any diagnostic requests, set "unsupportedRequestDetected" to false, "unsupportedRequestTitle" to "", and "unsupportedRequestMessage" to "".
 
       Customize your translation approach based on this specific reading style requested:
       ${levelPromptInstruction}
@@ -176,7 +178,13 @@ async function startServer() {
 
       let response = null;
       let lastErr = null;
-      const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-3.5-flash", "gemini-flash-latest"];
+      const modelsToTry = [
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-3.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-flash-latest"
+      ];
 
       for (const modelName of modelsToTry) {
         let attempts = 0;
