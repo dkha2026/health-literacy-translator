@@ -1082,9 +1082,44 @@ export default function App() {
               </button>
 
               {errorMessage && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-900 text-xs rounded-lg flex items-center gap-2">
-                  <AlertTriangle className="h-4.5 w-4.5 text-red-600 shrink-0" />
-                  <span>{errorMessage}</span>
+                <div className="mt-4 space-y-3">
+                  {errorMessage.includes("GEMINI_API_KEY") || errorMessage.includes("Gemini API client") ? (
+                    <div className={`p-4 rounded-xl border text-xs leading-relaxed transition-all shadow-sm ${
+                      darkMode ? "bg-amber-950/40 border-amber-800/50 text-slate-200" : "bg-amber-50/70 border-amber-200 text-slate-800"
+                    }`}>
+                      <div className="flex items-start gap-2.5 mb-3">
+                        <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-sm text-amber-800 dark:text-amber-400">
+                            Gemini API Key Required
+                          </p>
+                          <p className="opacity-85 mt-0.5 font-sans">
+                            The application needs a valid API key to simplify complex medical jargon. Please follow these simple steps to configure it:
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3.5 pl-7 border-l border-amber-200 dark:border-amber-800/50 ml-2.5">
+                        <div>
+                          <span className="font-semibold block text-amber-700 dark:text-amber-300">1. On Vercel (Production)</span>
+                          <span className="opacity-80 block font-sans">Go to your Vercel Dashboard, select this project, then navigate to <strong>Settings</strong> &gt; <strong>Environment Variables</strong>. Add <code>GEMINI_API_KEY</code> with your key and click save. Don't forget to trigger a new deployment for changes to take effect!</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold block text-amber-700 dark:text-amber-300">2. In Google AI Studio Build</span>
+                          <span className="opacity-80 block font-sans">Open the <strong>Settings</strong> or <strong>Secrets</strong> panel (gear icon or secrets option in the sidebar), add a secret named <code>GEMINI_API_KEY</code>, and paste your key.</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold block text-amber-700 dark:text-amber-300">3. In Local Development</span>
+                          <span className="opacity-80 block font-sans">Create a <code>.env</code> file in your root folder and add: <code>GEMINI_API_KEY=your_key_here</code></span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-red-50 border border-red-200 text-red-900 text-xs rounded-lg flex items-center gap-2">
+                      <AlertTriangle className="h-4.5 w-4.5 text-red-600 shrink-0" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
